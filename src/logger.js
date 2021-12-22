@@ -36,7 +36,7 @@ function createTransports() {
 function colorLevel(str) {
   if (str === 'error') {
     return chalk.red(str);
-  } else if (str === 'info') {
+  } if (str === 'info') {
     return chalk.green(str);
   }
 
@@ -45,8 +45,7 @@ function colorLevel(str) {
 
 function createLogger(level = 'warn') {
   return createWinstonLogger({
-    format: combine(printf(info =>
-        `${getFormatedDate()} - ${colorLevel(info.level)} ${info.message}`)),
+    format: combine(printf(info => `${getFormatedDate()} - ${colorLevel(info.level)} ${info.message}`)),
     level,
     transports: createTransports(),
   });

@@ -21,7 +21,7 @@ function last(array) {
 }
 
 function getLastMockOn(event) {
-  return last(mockOn.mock.calls.filter(args => args[0] === event));
+  return last(mockOn.mock.calls.filter((args) => args[0] === event));
 }
 
 const http = require('http');
@@ -254,8 +254,8 @@ describe('proxy_server', () => {
 
       const { addListener } = http.Server.mock.instances[0];
 
-      const onRequestArgs = addListener.mock.calls.filter(args => args[0] === 'request');
-      const onConnectArgs = addListener.mock.calls.filter(args => args[0] === 'connect');
+      const onRequestArgs = addListener.mock.calls.filter((args) => args[0] === 'request');
+      const onConnectArgs = addListener.mock.calls.filter((args) => args[0] === 'connect');
 
       expect(onRequestArgs.length > 0).toBeTruthy();
       expect(onConnectArgs.length > 0).toBeTruthy();

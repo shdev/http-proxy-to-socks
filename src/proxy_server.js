@@ -189,7 +189,7 @@ ProxyServer.prototype.loadProxyFile = function loadProxyFile(fileName) {
 };
 
 module.exports = {
-  createServer: options => new ProxyServer(options),
+  createServer: (options) => new ProxyServer(options),
   requestListener,
   connectListener,
   getProxyObject,

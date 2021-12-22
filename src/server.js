@@ -1,3 +1,4 @@
+/* eslint-disable prefer-object-spread */
 const { logger, changeLevel } = require('./logger');
 const { createServer: createProxyServer } = require('./proxy_server');
 

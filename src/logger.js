@@ -1,3 +1,4 @@
+/* eslint-disable prefer-object-spread */
 const winston = require('winston');
 const chalk = require('chalk');
 
@@ -45,7 +46,7 @@ function colorLevel(str) {
 
 function createLogger(level = 'warn') {
   return createWinstonLogger({
-    format: combine(printf(info => `${getFormatedDate()} - ${colorLevel(info.level)} ${info.message}`)),
+    format: combine(printf((info) => `${getFormatedDate()} - ${colorLevel(info.level)} ${info.message}`)),
     level,
     transports: createTransports(),
   });

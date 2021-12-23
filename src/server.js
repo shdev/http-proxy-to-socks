@@ -1,4 +1,5 @@
 /* eslint-disable prefer-object-spread */
+const _ = require('lodash');
 const { logger, changeLevel } = require('./logger');
 const { createServer: createProxyServer } = require('./proxy_server');
 
@@ -18,8 +19,10 @@ function createServer(opts) {
 
   const { port, socks, host } = options;
 
+  const socksAsString = _.isString(socks) ? socks : Object.keys(socks).join(', ');
+
   // eslint-disable-next-line
-  console.log(`SOCKS: ${socks}\nhttp-proxy listening: ${host}:${port}`);
+  console.log(`SOCKS: ${socksAsString}\nhttp-proxy listening: ${host}:${port}`);
 
   return createProxyServer(options).listen(port, host);
 }

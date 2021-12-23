@@ -4,6 +4,7 @@ const url = require('url');
 const http = require('http');
 const fs = require('fs');
 const Socks = require('socks');
+const _ = require('lodash');
 const { logger } = require('./logger');
 
 function randomElement(array) {
@@ -70,13 +71,31 @@ function requestListener(getProxyInfo, request, response) {
   request.pipe(proxyRequest);
 }
 
+function getProxyAndHost(getProxyInfo, request) {
+  let proxy = getProxyInfo();
+  const ph = url.parse(`http://${request.url}`);
+  const { hostname: host, port } = ph;
+
+  console.log('getProxyAndHost', proxy, host, port);
+  if (_.isArray(proxy)) {
+    proxy = proxy.filter((proxyMoxy) => {
+      for (const reggy of proxyMoxy.patterns) {
+        if (reggy.test(host)) {
+
+          return true;
+        }
+      }
+      return false;
+    }).pop();
+  }
+
+  return { proxy, host, port };
+}
+
 function connectListener(getProxyInfo, request, socketRequest, head) {
   logger.info(`connect: ${request.url}`);
 
-  const proxy = getProxyInfo();
-
-  const ph = url.parse(`http://${request.url}`);
-  const { hostname: host, port } = ph;
+  const { proxy, host, port } = getProxyAndHost(getProxyInfo, request);
 
   const options = {
     proxy,
@@ -154,7 +173,17 @@ util.inherits(ProxyServer, http.Server);
 
 ProxyServer.prototype.loadProxy = function loadProxy(proxyLine) {
   try {
-    this.proxyList.push(parseProxyLine(proxyLine));
+    if (_.isString(proxyLine)) {
+      this.proxyList.push(parseProxyLine(proxyLine));
+    } else {
+      const proxys = [];
+      for (const proxyLineKey in proxyLine) {
+        const elem = parseProxyLine(proxyLineKey);
+        elem.patterns = proxyLine[proxyLineKey].map((line) => new RegExp(line));
+        proxys.push(elem);
+      }
+      this.proxyList.push(proxys);
+    }
   } catch (ex) {
     logger.error(ex.message);
   }

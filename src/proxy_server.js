@@ -6,6 +6,7 @@ const fs = require('fs');
 const Socks = require('socks');
 const _ = require('lodash');
 const { logger } = require('./logger');
+const net = require('net');
 
 function randomElement(array) {
   return array[Math.floor(Math.random() * array.length)];
@@ -91,17 +92,15 @@ function getProxyAndHost(getProxyInfo, request) {
   return { proxy, host, port };
 }
 
-function connectListener(getProxyInfo, request, socketRequest, head) {
-  logger.info(`connect: ${request.url}`);
-
-  const { proxy, host, port } = getProxyAndHost(getProxyInfo, request);
-
-  const options = {
-    proxy,
-    target: { host, port },
-    command: 'connect',
-  };
-
+function connectSocksRequest(
+  options,
+  proxy,
+  socketRequest,
+  request,
+  head,
+  onRemoteSocketEnd,
+  onRemoteSocketError
+) {
   let socket;
 
   socketRequest.on('error', (err) => {
@@ -126,6 +125,9 @@ function connectListener(getProxyInfo, request, socketRequest, head) {
       socketRequest.destroy(err);
     });
 
+    socket.on('error', onRemoteSocketError);
+    socket.on('end', onRemoteSocketEnd);
+
     // tunneling to the host
     socket.pipe(socketRequest);
     socketRequest.pipe(socket);
@@ -134,6 +136,62 @@ function connectListener(getProxyInfo, request, socketRequest, head) {
     socketRequest.write(`HTTP/${request.httpVersion} 200 Connection established\r\n\r\n`);
     socket.resume();
   });
+}
+
+function connectListener(getProxyInfo, request, socketRequest, head) {
+  const socketTimeout = 120 * 1000;
+
+  logger.info(`connect: ${request.url}`);
+
+  const { proxy, host, port } = getProxyAndHost(getProxyInfo, request);
+
+  const options = {
+    proxy,
+    target: { host, port },
+    command: 'connect',
+  };
+
+  const onRemoteSocketEnd = () => {
+    logger.info(`socket for ${request.url}: ended`);
+    if (!socketRequest.destroyed) {
+      socketRequest.end();
+    }
+  };
+
+  const onRemoteSocketError = (err) => {
+    logger.error(`socket error for ${request.url}: '${err.message}'`);
+    socketRequest.destroy(err);
+  };
+
+  if (proxy) {
+    connectSocksRequest(
+      options,
+      proxy,
+      socketRequest,
+      request,
+      head,
+      onRemoteSocketEnd,
+      onRemoteSocketError
+    );
+  } else {
+    const socket = net.connect({ port, host, timeout: socketTimeout }, () => {
+      socketRequest.write('HTTP/1.1 200 Connection established\r\n\r\n');
+      socket.write(head);
+      socketRequest.pipe(socket);
+      socket.pipe(socketRequest);
+    });
+
+    socket.on('error', onRemoteSocketError);
+
+    socket.on('end', onRemoteSocketEnd);
+
+    socketRequest.on('error', (err) => {
+      logger.error(`${err.message}`);
+      if (socket) {
+        socket.destroy(err);
+      }
+    });
+  }
 }
 
 function ProxyServer(options) {

@@ -76,7 +76,6 @@ function getProxyAndHost(getProxyInfo, request) {
   const ph = url.parse(`http://${request.url}`);
   const { hostname: host, port } = ph;
 
-  console.log('getProxyAndHost', proxy, host, port);
   if (_.isArray(proxy)) {
     proxy = proxy.filter((proxyMoxy) => {
       for (const reggy of proxyMoxy.patterns) {

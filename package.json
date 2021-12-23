@@ -26,6 +26,7 @@
   "dependencies": {
     "chalk": "^2.4.1",
     "commander": "^2.9.0",
+    "lodash": "^4.17.21",
     "socks": "^1.1.10",
     "winston": "^3.1.0"
   },
